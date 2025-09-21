@@ -6,6 +6,8 @@ test:
   stage: test
   image: python:3.11
   script:
+    - cd api
+    - PYTHONPATH=$PYTHONPATH:.
     - pip install -r requirements.txt
     - pytest --junitxml=test-results/report.xml
   artifacts:
