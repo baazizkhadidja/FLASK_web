@@ -1,7 +1,7 @@
 import os
 import pytest
 import sqlite3
-from api import app, db_connection
+from api import api.app , db_connection
 
 # Forcer le chemin courant vers le répertoire contenant books.sqlite
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
