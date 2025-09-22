@@ -6,6 +6,8 @@ test:
   stage: test
   image: python:3.11
   script:
+    - pwd
+    - ls -la
     - PYTHONPATH=$PYTHONPATH:.
     - pip install -r requirements.txt
     - pytest --junitxml=test-results/report.xml
