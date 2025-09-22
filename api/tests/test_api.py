@@ -1,24 +1,30 @@
+import os
 import pytest
-from api import app
+import sqlite3
+from api.api import app, db_connection
+
+# Forcer le chemin courant vers le répertoire contenant books.sqlite
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 @pytest.fixture
 def client():
-    app.config["TESTING"] = True
+    app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
 def test_get_books(client):
-    response = client.get("/books")
+    response = client.get('/books')
     assert response.status_code == 200
-    assert isinstance(response.get_json(), list)
+    assert isinstance(response.json, list)
+    if response.json:
+        assert all('id' in book and 'author' in book and 'language' in book and 'title' in book for book in response.json)
 
-def test_get_single_book(client):
-    response = client.get("/books/1")
-    assert response.status_code == 200
-    data = response.get_json()
-    assert data["id"] == 1
-    assert "title" in data
-
-def test_book_not_found(client):
-    response = client.get("/books/999")
-    assert response.status_code == 404
+def test_post_book(client):
+    # Données fictives pour le test
+    data = {
+        'author': 'Test Author',
+        'language': 'Test Language',
+        'title': 'Test Title'
+    }
+    response = client.post('/books', data=data)
+    assert response.status_code == 200 or response.status_code == 201

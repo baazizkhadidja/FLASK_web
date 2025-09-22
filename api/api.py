@@ -1,97 +1,85 @@
 from flask import Flask, request, jsonify
-
+import sqlite3
+import os
 
 app = Flask(__name__)
 
 
-books_list = [
-    {
-        "id" : 0,
-        "author" : "Guillaume Musso",
-        "language" : "French",
-        "title" : "Angelic",
-    },
-    {
-        "id" : 1,
-        "author" : "Emily Bront",
-        "language" : "English",
-        "title" : "Wuthering Heights",
-    },
-    {
-        "id" : 2,
-        "author" : "Rousseau",
-        "language" : "French",
-        "title" : "le contrat sociale",
-    },
-   {
-        "id" : 3,
-        "author" : "Voltaire ",
-        "language" : "English",
-        "title" : "Zadic",
-    },
-    {
-        "id" : 4,
-        "author" : "Ahlam Mustaghanami",
-        "language" : "Arabic",
-        "title" : "le noir",
-    },
-    {
-        "id" : 5,
-        "author" : "George Luis Borges ",
-        "language" : "Spanish",
-        "title" : "Ficciones",
-    }
-]
+def db_connection():
+    conn = None
+    try:
+        # Déterminer le chemin absolu du fichier books.sqlite
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(base_dir, 'books.sqlite')
+        conn = sqlite3.connect(db_path)
+    except sqlite3.error as e:
+        print(e)
+    return conn
 
 @app.route('/books', methods = ['GET', 'POST'])
 def books():
+    conn = db_connection()
+    cursor = conn.cursor()
     if request.method == 'GET':
-        if len(books_list) > 0:
-            return jsonify(books_list)
-        else:
-            'Nothing Found', 404
+        cursor = conn.execute("select * FROM book")
+        books = [
+            dict(id=row[0], author=row[1], language=row[2], title=row[3])
+            for row in cursor.fetchall()
+        ]
+        if books is not None:
+            return jsonify(books)
 
     if request.method == 'POST':
         new_author = request.form['author']
         new_lang = request.form['language']
         new_title = request.form['title']
-        ID = books_list[-1]['id'] + 1
+        sql = """INSERT INTO book (author, language, title)
+                 VALUES (?, ?, ?)"""
 
-        new_obj = {
-            'id' : ID,
-            'author' : new_author,
-            'language' : new_lang,
-            'title' : new_title
-        }
-        books_list.append(new_obj)
-        return jsonify(books_list), 201
+        cursor = conn.execute(sql, (new_author, new_lang, new_title))
+        conn.commit()  
+        return f"Book with the id: {cursor.lastrowid} created succesfully", 201
 
 
 @app.route('/book/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def single_book(id):
+    conn = db_connection()
+    cursor = conn.cursor()
+    book = None
     if request.method == 'GET':
-        for book in books_list:
-            if book["id"] == id:
-                return jsonify(book)
-            pass
+        cursor.execute("select * FROM book WHERE id=?", (id,))
+        rows = cursor.fetchall()
+        for r in rows:
+            book = r
+        if book is not None:
+            return jsonify(book),200
+        else:
+            return "Something wrong", 404
+    
     if request.method == 'PUT':
-        for book in books_list:
-            if book["id"] == id:
-                book['author'] = request.form['author']
-                book['language'] = request.form['language']
-                book['title'] = request.form['title']
-                updated_book = {
-                    'id' : id,
-                    'author' : book['author'],
-                    'language' : book['language'],
-                    'title' : book['title']
-                }
-                return jsonify(updated_book)
+        sql = """UPDATE book
+        SET author=?,
+            language=?,
+            title=?
+            WHERE id=?
+        """
+        author = request.form['author']
+        language = request.form['language']
+        title = request.form['title']
+        updated_book = {
+            'id' : id,
+            'author' : author,
+            'language' : language,
+            'title' : title
+        }
+        conn.execute(sql, (author, language, title, id))
+        conn.commit()
+        return jsonify(updated_book)
     if request.method == 'DELETE':
-        for index, book in enumerate(books_list):
-            if book['id'] == id:
-                books_list.pop(index)
-                return jsonify(books_list)
+        sql = """ DELETE FROM book WHERE id=? """
+        conn.execute(sql, (id,)) 
+        conn.commit()
+        return "The book with id: {} has been deleted.".format(id), 200
 
 
 
