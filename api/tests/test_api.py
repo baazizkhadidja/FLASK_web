@@ -1,7 +1,10 @@
+import sys
 import os
 import pytest
 import sqlite3
 from api.api import app , db_connection
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Forcer le chemin courant vers le répertoire contenant books.sqlite
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
