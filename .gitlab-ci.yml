@@ -11,3 +11,20 @@ test:
     - pwd
     - ls -la
     - pytest
+
+upload-tests-to-xray:
+  stage: report
+  image: curlimages/curl:latest
+  script:
+    - echo "Authentification auprès de Xray Cloud..."
+    - |
+      TOKEN=$(curl -s -H "Content-Type: application/json" \
+        -X POST \
+        -d "{\"client_id\": \"$XRAY_CLIENT_ID\", \"client_secret\": \"$XRAY_SECRET\"}" \
+        https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
+
+      echo "Envoi du fichier JUnit vers Xray..."
+      curl -H "Content-Type: multipart/form-data" \
+           -H "Authorization: Bearer $TOKEN" \
+           -F "file=@test-results/report.xml" \
+           https://xray.cloud.getxray.app/api/v2/import/execution/junit
