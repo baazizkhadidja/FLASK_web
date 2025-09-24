@@ -7,3 +7,9 @@ venv/
 .idea/
 .vscode/
 .git/
+Dockerfile
+Dockerfile.test
+README.md
+Procfile
+api/.pytest_cache
+__pycache__

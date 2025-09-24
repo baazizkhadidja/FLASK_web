@@ -1,0 +1,11 @@
+services:
+  my-python:
+    container_name: flask-books-container 
+    build: .
+    volumes:
+      - ./api:/app/api:ro
+    ports:
+    - "5000:5000"
+    env_file:
+      - ./.env
+
